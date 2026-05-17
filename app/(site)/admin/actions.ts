@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { create, getById, remove, update } from "@/lib/store";
-import { uploadToBlob, validateFile } from "@/lib/upload";
+import { saveUpload, validateFile } from "@/lib/upload";
 import type { Category, MediaType, Status } from "@/lib/types";
+
+function fileUrl(key: string) {
+  return `/api/files/${key}`;
+}
 
 const CATEGORIES: Category[] = ["films", "animaties", "fotos", "projecten"];
 
@@ -48,11 +52,13 @@ export async function uploadAction(
   let thumbUrl: string;
   let mediaUrl: string;
   try {
-    mediaUrl = await uploadToBlob(mediaFile, mediaKind);
+    const mediaKey = await saveUpload(mediaFile, mediaKind);
+    mediaUrl = fileUrl(mediaKey);
     if (thumbFile instanceof File && thumbFile.size > 0) {
       const thumbCheck = validateFile(thumbFile, "thumbnail");
       if (!thumbCheck.ok) return thumbCheck;
-      thumbUrl = await uploadToBlob(thumbFile, "thumbnail");
+      const thumbKey = await saveUpload(thumbFile, "thumbnail");
+      thumbUrl = fileUrl(thumbKey);
     } else if (!isVideo) {
       thumbUrl = mediaUrl;
     } else {

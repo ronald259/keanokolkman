@@ -1,9 +1,10 @@
 node_modules
 .next
-out
+.git
 .env
 .env.local
+.vercel
 *.log
 .DS_Store
+README.md
 data/uploads
-data/media.json

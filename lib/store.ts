@@ -1,101 +1,142 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { MediaItem, Category, Status } from "./types";
+import { db } from "./db";
+import type { Category, MediaItem, Status } from "./types";
 
-// In Vercel productie is alleen /tmp writable. Lokaal gebruiken we /data.
-// Bij eerste read kopiëren we de seed naar de runtime-locatie.
-const SEED_FILE = path.join(process.cwd(), "data", "seed.json");
-const RUNTIME_FILE =
-  process.env.VERCEL === "1"
-    ? path.join("/tmp", "keanu-media.json")
-    : path.join(process.cwd(), "data", "media.json");
+type Row = {
+  id: string;
+  title: string;
+  description: string;
+  category: Category;
+  media_type: "video" | "image";
+  file_path: string;
+  thumbnail_path: string;
+  status: Status;
+  sort_order: number;
+  featured: boolean;
+  tags: string[];
+  created_at: Date;
+  updated_at: Date;
+};
 
-let cache: MediaItem[] | null = null;
-
-async function loadFromDisk(): Promise<MediaItem[]> {
-  try {
-    const buf = await fs.readFile(RUNTIME_FILE, "utf8");
-    return JSON.parse(buf) as MediaItem[];
-  } catch {
-    const seed = await fs.readFile(SEED_FILE, "utf8");
-    const items = JSON.parse(seed) as MediaItem[];
-    await persist(items);
-    return items;
-  }
-}
-
-async function persist(items: MediaItem[]): Promise<void> {
-  await fs.mkdir(path.dirname(RUNTIME_FILE), { recursive: true });
-  await fs.writeFile(RUNTIME_FILE, JSON.stringify(items, null, 2), "utf8");
-  cache = items;
+function toItem(r: Row): MediaItem {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    category: r.category,
+    mediaType: r.media_type,
+    filePath: r.file_path,
+    thumbnailPath: r.thumbnail_path,
+    status: r.status,
+    sortOrder: r.sort_order,
+    featured: r.featured,
+    tags: r.tags ?? [],
+    createdAt: r.created_at.toISOString(),
+    updatedAt: r.updated_at.toISOString(),
+  };
 }
 
 export async function getAll(): Promise<MediaItem[]> {
-  if (!cache) cache = await loadFromDisk();
-  return cache;
+  const { rows } = await db().query<Row>(
+    `SELECT * FROM media ORDER BY sort_order ASC, created_at DESC`
+  );
+  return rows.map(toItem);
 }
 
 export async function getPublished(): Promise<MediaItem[]> {
-  const all = await getAll();
-  return all
-    .filter((m) => m.status === "published")
-    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const { rows } = await db().query<Row>(
+    `SELECT * FROM media WHERE status = 'published' ORDER BY sort_order ASC, created_at DESC`
+  );
+  return rows.map(toItem);
 }
 
 export async function getById(id: string): Promise<MediaItem | null> {
-  const all = await getAll();
-  return all.find((m) => m.id === id) ?? null;
+  const { rows } = await db().query<Row>(`SELECT * FROM media WHERE id = $1`, [id]);
+  return rows[0] ? toItem(rows[0]) : null;
 }
 
 export async function getByCategory(category: Category): Promise<MediaItem[]> {
-  const items = await getPublished();
-  return items.filter((m) => m.category === category);
+  const { rows } = await db().query<Row>(
+    `SELECT * FROM media WHERE category = $1 AND status = 'published' ORDER BY sort_order ASC, created_at DESC`,
+    [category]
+  );
+  return rows.map(toItem);
 }
 
 export async function getFeatured(): Promise<MediaItem[]> {
-  const items = await getPublished();
-  return items.filter((m) => m.featured);
+  const { rows } = await db().query<Row>(
+    `SELECT * FROM media WHERE featured = true AND status = 'published' ORDER BY sort_order ASC, created_at DESC`
+  );
+  return rows.map(toItem);
 }
 
-export async function getRecent(limit = 10): Promise<MediaItem[]> {
-  const items = await getPublished();
-  return [...items]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, limit);
+export async function getRecent(limit = 12): Promise<MediaItem[]> {
+  const { rows } = await db().query<Row>(
+    `SELECT * FROM media WHERE status = 'published' ORDER BY created_at DESC LIMIT $1`,
+    [limit]
+  );
+  return rows.map(toItem);
 }
 
 export async function create(input: Omit<MediaItem, "id" | "createdAt" | "updatedAt" | "sortOrder"> & { sortOrder?: number }): Promise<MediaItem> {
-  const all = await getAll();
-  const now = new Date().toISOString();
-  const item: MediaItem = {
-    ...input,
-    id: randomUUID(),
-    sortOrder: input.sortOrder ?? all.length,
-    createdAt: now,
-    updatedAt: now,
-  };
-  await persist([...all, item]);
-  return item;
+  const id = randomUUID();
+  const { rows } = await db().query<Row>(
+    `INSERT INTO media
+       (id, title, description, category, media_type, file_path, thumbnail_path, status, sort_order, featured, tags)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,
+       COALESCE($9, (SELECT COALESCE(MAX(sort_order),0)+1 FROM media)),
+       $10, $11)
+     RETURNING *`,
+    [
+      id,
+      input.title,
+      input.description,
+      input.category,
+      input.mediaType,
+      input.filePath,
+      input.thumbnailPath,
+      input.status,
+      input.sortOrder ?? null,
+      input.featured,
+      input.tags,
+    ]
+  );
+  return toItem(rows[0]);
 }
 
 export async function update(id: string, patch: Partial<MediaItem>): Promise<MediaItem | null> {
-  const all = await getAll();
-  const idx = all.findIndex((m) => m.id === id);
-  if (idx === -1) return null;
-  const next: MediaItem = { ...all[idx], ...patch, id, updatedAt: new Date().toISOString() };
-  const items = [...all];
-  items[idx] = next;
-  await persist(items);
-  return next;
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  const map: Record<string, string> = {
+    title: "title",
+    description: "description",
+    category: "category",
+    mediaType: "media_type",
+    filePath: "file_path",
+    thumbnailPath: "thumbnail_path",
+    status: "status",
+    sortOrder: "sort_order",
+    featured: "featured",
+    tags: "tags",
+  };
+  for (const [k, col] of Object.entries(map)) {
+    if (k in patch && patch[k as keyof MediaItem] !== undefined) {
+      values.push(patch[k as keyof MediaItem]);
+      fields.push(`${col} = $${values.length}`);
+    }
+  }
+  if (fields.length === 0) return getById(id);
+  values.push(id);
+  const { rows } = await db().query<Row>(
+    `UPDATE media SET ${fields.join(", ")}, updated_at = now() WHERE id = $${values.length} RETURNING *`,
+    values
+  );
+  return rows[0] ? toItem(rows[0]) : null;
 }
 
-export async function remove(id: string): Promise<boolean> {
-  const all = await getAll();
-  const next = all.filter((m) => m.id !== id);
-  if (next.length === all.length) return false;
-  await persist(next);
-  return true;
+export async function remove(id: string): Promise<MediaItem | null> {
+  const { rows } = await db().query<Row>(`DELETE FROM media WHERE id = $1 RETURNING *`, [id]);
+  return rows[0] ? toItem(rows[0]) : null;
 }
 
 export async function setStatus(id: string, status: Status) {

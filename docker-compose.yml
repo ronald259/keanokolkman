@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: keanu
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD ontbreekt in .env}
+      POSTGRES_DB: keanu
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keanu -d keanu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://keanu:${DB_PASSWORD}@db:5432/keanu
+      SITE_PASSWORD: ${SITE_PASSWORD:?SITE_PASSWORD ontbreekt in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD ontbreekt in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET ontbreekt in .env}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - media_data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN ontbreekt in .env (bv. portfolio.keanu.nl)}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL ontbreekt in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - web
+
+volumes:
+  db_data:
+  media_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+  web:

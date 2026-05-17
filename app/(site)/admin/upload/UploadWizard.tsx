@@ -50,7 +50,7 @@ export default function UploadWizard() {
       <Stepper step={step} />
 
       {step === 1 && (
-        <Section title="1. Kies een bestand" description="MP4, MOV, WebM (video) of JPG, PNG, WebP (foto). Max 200 MB.">
+        <Section title="1. Kies een bestand" description="MP4, MOV, WebM (video) of JPG, PNG, WebP (foto). Max 500 MB.">
           <input
             type="file"
             accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp"
@@ -62,12 +62,12 @@ export default function UploadWizard() {
               <div>
                 <span className="text-white">{media.name}</span> · {(media.size / 1024 / 1024).toFixed(1)} MB · {media.type}
               </div>
-              {media.size > 200 * 1024 * 1024 && (
-                <div className="text-red-300 mt-2">Bestand is groter dan 200 MB.</div>
+              {media.size > 500 * 1024 * 1024 && (
+                <div className="text-red-300 mt-2">Bestand is groter dan 500 MB.</div>
               )}
             </div>
           )}
-          <Nav onNext={() => setStep(2)} nextDisabled={!media || media.size > 200 * 1024 * 1024} />
+          <Nav onNext={() => setStep(2)} nextDisabled={!media || media.size > 500 * 1024 * 1024} />
         </Section>
       )}
 
