@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Keano Kolkman — Inloggen</title>
+<meta name="description" content="Privé portfolioplatform van Keano Kolkman." />
+<meta name="robots" content="noindex,nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+<main class="login-shell">
+  <div class="login-card">
+    <div class="logo-wrap">
+      <span class="logo logo--xl" aria-label="Keano Kolkman">
+        <span class="logo__mark">K</span>
+        <span class="logo__text">
+          Keano Kolkman
+          <small>PRIVATE STREAMING</small>
+        </span>
+      </span>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button id="tab-visitor" class="is-active" role="tab" aria-selected="true">Bezoeker</button>
+      <button id="tab-admin" role="tab" aria-selected="false">Admin</button>
+    </div>
+
+    <h1 id="login-title">Welkom terug</h1>
+    <p class="lead" id="login-sub">Vul je toegangscode in om de collectie te bekijken.</p>
+
+    <form id="login-form" novalidate>
+      <label class="field">
+        <span class="field__label">Toegangscode</span>
+        <input id="pwd" type="password" autocomplete="current-password" required placeholder="••••••••" />
+        <span class="helper-text">Demo: <span class="kbd">kijken</span> voor bezoeker · <span class="kbd">keano</span> voor admin</span>
+      </label>
+
+      <button type="submit" class="btn btn--neon btn--lg" style="width:100%; justify-content:center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Toegang verkrijgen
+      </button>
+
+      <div id="alert" class="alert alert--err">Onjuiste code. Probeer opnieuw.</div>
+    </form>
+  </div>
+</main>
+
+<script src="assets/js/app.js"></script>
+<script>
+  const tabVisitor = document.getElementById("tab-visitor");
+  const tabAdmin   = document.getElementById("tab-admin");
+  const title      = document.getElementById("login-title");
+  const sub        = document.getElementById("login-sub");
+  const form       = document.getElementById("login-form");
+  const pwd        = document.getElementById("pwd");
+  const alertEl    = document.getElementById("alert");
+  let role = "visitor";
+
+  function selectTab(r) {
+    role = r;
+    tabVisitor.classList.toggle("is-active", r === "visitor");
+    tabAdmin.classList.toggle("is-active",   r === "admin");
+    tabVisitor.setAttribute("aria-selected", r === "visitor");
+    tabAdmin.setAttribute("aria-selected",   r === "admin");
+    title.textContent = r === "admin" ? "Adminomgeving" : "Welkom terug";
+    sub.textContent = r === "admin"
+      ? "Log in om je portfolio te beheren."
+      : "Vul je toegangscode in om de collectie te bekijken.";
+    pwd.focus();
+  }
+  tabVisitor.addEventListener("click", () => selectTab("visitor"));
+  tabAdmin.addEventListener("click",   () => selectTab("admin"));
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const expected = KKAuth.DEMO_PASSWORDS[role];
+    if (pwd.value === expected) {
+      alertEl.classList.remove("is-show");
+      KKAuth.setSession(role);
+      window.location.href = role === "admin" ? "admin.html" : "home.html";
+    } else {
+      alertEl.classList.add("is-show");
+      pwd.focus();
+      pwd.select();
+    }
+  });
+
+  // Als al ingelogd, doorsturen
+  const existing = KKAuth.getSession();
+  if (existing) {
+    window.location.href = existing.role === "admin" ? "admin.html" : "home.html";
+  }
+</script>
+</body>
+</html>

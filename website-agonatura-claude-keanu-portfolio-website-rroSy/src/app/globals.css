@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 249 245 236; /* cream */
+  --foreground: 23 30 20;    /* moss-950 */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-moss-950 antialiased;
+    font-feature-settings: "ss01", "ss02", "cv11";
+  }
+
+  ::selection {
+    @apply bg-forest-700 text-cream;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-wide {
+    @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-12;
+  }
+
+  .container-narrow {
+    @apply mx-auto w-full max-w-3xl px-6 sm:px-8;
+  }
+
+  .eyebrow {
+    @apply font-sans text-[0.72rem] uppercase tracking-[0.22em] text-forest-700/80;
+  }
+
+  .display-1 {
+    @apply font-display text-4xl leading-[1.02] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl;
+  }
+
+  .display-2 {
+    @apply font-display text-3xl leading-[1.05] tracking-tight sm:text-4xl md:text-5xl;
+  }
+
+  .display-3 {
+    @apply font-display text-2xl leading-[1.1] tracking-tight sm:text-3xl md:text-4xl;
+  }
+
+  .lede {
+    @apply text-lg leading-relaxed text-moss-800 sm:text-xl;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium tracking-wide transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-forest-600 focus-visible:ring-offset-cream;
+  }
+
+  .btn-primary {
+    @apply btn bg-forest-700 text-cream hover:bg-forest-800 hover:shadow-lg hover:shadow-forest-900/15;
+  }
+
+  .btn-ghost {
+    @apply btn border border-moss-300/70 bg-cream/40 text-moss-900 backdrop-blur-sm hover:border-forest-600 hover:bg-cream;
+  }
+
+  .btn-quiet {
+    @apply btn text-moss-900 hover:bg-moss-100;
+  }
+
+  .card-soft {
+    @apply rounded-3xl border border-moss-200/60 bg-cream/70 p-8 shadow-sm shadow-moss-900/5 backdrop-blur-sm;
+  }
+
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-moss-300/60 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .grain {
+    background-image: radial-gradient(rgba(58, 46, 34, 0.05) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+
+  .bg-paper {
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(170, 187, 152, 0.18), transparent 60%),
+      radial-gradient(900px 700px at -10% 30%, rgba(214, 189, 133, 0.16), transparent 60%),
+      linear-gradient(180deg, #f9f5ec 0%, #f4f0e3 100%);
+  }
+
+  .bg-canopy {
+    background:
+      radial-gradient(800px 500px at 20% 0%, rgba(74, 121, 89, 0.25), transparent 70%),
+      radial-gradient(900px 600px at 90% 80%, rgba(44, 76, 57, 0.45), transparent 70%),
+      linear-gradient(180deg, #1e3327 0%, #0e1c15 100%);
+  }
+}

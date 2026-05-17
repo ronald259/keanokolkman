@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nieuw item — Keano Kolkman</title>
+<meta name="robots" content="noindex,nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+<div id="site-header"></div>
+<main id="main"></main>
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  if (!KKAuth.requireAuth({ adminOnly: true })) { /* redirected */ } else {
+    KKHeader.mount("admin");
+    KKFooter.mount();
+    renderWizard();
+  }
+
+  function renderWizard() {
+    const main = document.getElementById("main");
+    main.innerHTML = `
+      <section class="container admin-shell">
+        <div class="admin-head">
+          <div>
+            <span class="eyebrow">Adminomgeving · Upload</span>
+            <h1>Nieuw item toevoegen</h1>
+            <p style="color:var(--text-dim); margin-top:8px;">In 5 stappen: bestand → details → thumbnail → categorie → publiceren.</p>
+          </div>
+          <a href="admin.html" class="btn btn--outline">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Terug
+          </a>
+        </div>
+
+        <div class="wizard">
+          <div class="wizard__stepper" id="stepper">
+            ${["Bestand","Details","Thumbnail","Categorie","Publiceren"]
+              .map((s,i) => `
+                <div class="wizard__step ${i===0?'is-active':''}" data-step="${i+1}">
+                  <span class="num">${i+1}</span> ${s}
+                </div>
+                ${i<4 ? `<span class="wizard__divider"></span>`:''}
+              `).join("")}
+          </div>
+
+          <!-- STEP 1: Bestand -->
+          <div class="wizard__panel is-active" data-panel="1">
+            <h2>Kies een bestand</h2>
+            <p class="lead">Video (mp4, mov, webm) of afbeelding (jpg, png, webp). Maximaal 2 GB per bestand.</p>
+            <label class="dropzone" id="dz">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--cyan)">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <div class="dropzone__title">Sleep bestand hier of klik om te kiezen</div>
+              <div class="dropzone__hint">In productie wordt het bestand veilig naar Hetzner of Vimeo geüpload</div>
+              <input type="file" id="file-input" accept=".mp4,.mov,.webm,.jpg,.jpeg,.png,.webp" />
+            </label>
+            <div id="file-meta" style="display:none; margin-top:18px;">
+              <div class="thumb-preview" id="file-preview">
+                <span class="meta" id="file-info"></span>
+              </div>
+              <div class="progress"><span id="prog"></span></div>
+              <p class="helper-text" id="status">Klaar voor upload</p>
+            </div>
+          </div>
+
+          <!-- STEP 2: Details -->
+          <div class="wizard__panel" data-panel="2">
+            <h2>Titel & beschrijving</h2>
+            <p class="lead">Houd het kort. Beschrijving mag wat langer.</p>
+            <label class="field">
+              <span class="field__label">Titel</span>
+              <input id="f-title" type="text" placeholder="Bijv. The Last Frame" />
+            </label>
+            <label class="field">
+              <span class="field__label">Beschrijving</span>
+              <textarea id="f-desc" placeholder="Wat zien we? Wat is het verhaal? Wie heeft meegewerkt?"></textarea>
+            </label>
+            <div class="field--row">
+              <label class="field">
+                <span class="field__label">Tags (komma's)</span>
+                <input id="f-tags" type="text" placeholder="drama, noir, neon" />
+              </label>
+              <label class="field">
+                <span class="field__label">Vimeo ID (optioneel)</span>
+                <input id="f-vimeo" type="text" placeholder="76979871" />
+              </label>
+            </div>
+          </div>
+
+          <!-- STEP 3: Thumbnail -->
+          <div class="wizard__panel" data-panel="3">
+            <h2>Thumbnail</h2>
+            <p class="lead">Kies een eigen afbeelding of laat hem automatisch uit de video genereren.</p>
+            <div class="field--row">
+              <div>
+                <div class="thumb-preview" id="thumb-preview" style="background-image:url('https://picsum.photos/seed/keano-preview/800/450')">
+                  <span class="meta">Voorbeeld 16:9</span>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                  <button class="btn btn--outline btn--sm" id="thumb-auto">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>
+                    Automatisch uit video
+                  </button>
+                  <label class="btn btn--outline btn--sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    Eigen afbeelding
+                    <input type="file" id="thumb-upload" accept=".jpg,.jpeg,.png,.webp" style="display:none;" />
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label class="field">
+                  <span class="field__label">Jaar</span>
+                  <input id="f-year" type="number" min="1990" max="2099" value="2025" />
+                </label>
+                <label class="field">
+                  <span class="field__label">Duur of formaat</span>
+                  <input id="f-duration" type="text" placeholder="bv. 12:42 of 8 beelden" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: Categorie -->
+          <div class="wizard__panel" data-panel="4">
+            <h2>Categorie</h2>
+            <p class="lead">Waar past dit item het beste?</p>
+            <div class="cat-grid" id="cat-grid">
+              ${["films","animaties","fotos","projecten"].map((k,i) => `
+                <button type="button" class="cat-tile ${i===0?'is-active':''}" data-cat="${k}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    ${k==='films'     ? '<rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/>' : ''}
+                    ${k==='animaties' ? '<polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/>' : ''}
+                    ${k==='fotos'     ? '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>' : ''}
+                    ${k==='projecten' ? '<path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/>' : ''}
+                  </svg>
+                  <strong>${({films:"Films",animaties:"Animaties",fotos:"Foto's",projecten:"Projecten"})[k]}</strong>
+                  <span>${({films:"Live-action",animaties:"2D / 3D / motion",fotos:"Reeksen",projecten:"Commercieel & BTS"})[k]}</span>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- STEP 5: Publiceren -->
+          <div class="wizard__panel" data-panel="5">
+            <h2>Publiceren</h2>
+            <p class="lead">Controleer de samenvatting en kies hoe je het item plaatst.</p>
+            <div class="thumb-preview" id="final-preview"></div>
+            <div id="summary" style="margin-top:16px; color:var(--text-dim); font-size:14px;"></div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:24px;">
+              <label style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; cursor:pointer;">
+                <input type="checkbox" id="f-featured" /> Uitgelicht op homepage
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; cursor:pointer;">
+                <input type="checkbox" id="f-download" /> Download toestaan
+              </label>
+            </div>
+
+            <div class="alert alert--ok" id="published" style="margin-top:18px;">
+              Demo: het item zou nu worden opgeslagen en gepubliceerd. In de live versie roept dit `POST /api/media` aan.
+            </div>
+          </div>
+
+          <div class="wizard__actions">
+            <button class="btn btn--outline" id="prev-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              Vorige
+            </button>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn--ghost" id="save-draft-btn">Opslaan als concept</button>
+              <button class="btn btn--neon" id="next-btn">
+                Volgende
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+    wireWizard();
+  }
+
+  function wireWizard() {
+    const panels = [...document.querySelectorAll(".wizard__panel")];
+    const steps  = [...document.querySelectorAll(".wizard__step")];
+    const prevBtn = document.getElementById("prev-btn");
+    const nextBtn = document.getElementById("next-btn");
+    let step = 1;
+
+    const showStep = (n) => {
+      step = Math.max(1, Math.min(5, n));
+      panels.forEach(p => p.classList.toggle("is-active", +p.dataset.panel === step));
+      steps.forEach((s,i) => {
+        s.classList.toggle("is-active", i+1 === step);
+        s.classList.toggle("is-done",   i+1 < step);
+      });
+      prevBtn.style.visibility = step === 1 ? "hidden" : "visible";
+      nextBtn.innerHTML = step === 5
+        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg> Publiceren`
+        : `Volgende <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`;
+      if (step === 5) buildSummary();
+    };
+    prevBtn.addEventListener("click", () => showStep(step - 1));
+    nextBtn.addEventListener("click", () => {
+      if (step === 5) {
+        document.getElementById("published").classList.add("is-show");
+        nextBtn.disabled = true;
+        setTimeout(() => window.location.href = "admin.html", 1500);
+        return;
+      }
+      showStep(step + 1);
+    });
+
+    // Drop zone
+    const dz = document.getElementById("dz");
+    const input = document.getElementById("file-input");
+    dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("is-drag"); });
+    dz.addEventListener("dragleave", () => dz.classList.remove("is-drag"));
+    dz.addEventListener("drop", e => {
+      e.preventDefault(); dz.classList.remove("is-drag");
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener("change", () => input.files[0] && handleFile(input.files[0]));
+
+    function handleFile(file) {
+      const MAX = 2 * 1024 * 1024 * 1024;
+      if (file.size > MAX) {
+        alert("Bestand is groter dan 2 GB. Probeer compressie of gebruik Vimeo upload.");
+        return;
+      }
+      document.getElementById("file-meta").style.display = "block";
+      document.getElementById("file-info").textContent =
+        `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB`;
+      // Preview voor afbeeldingen
+      if (file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        document.getElementById("file-preview").style.backgroundImage = `url('${url}')`;
+        document.getElementById("thumb-preview").style.backgroundImage = `url('${url}')`;
+      } else {
+        document.getElementById("file-preview").style.backgroundImage =
+          `url('https://picsum.photos/seed/keano-up-${Date.now()}/800/450')`;
+      }
+      // Fake progress
+      const bar = document.getElementById("prog");
+      const status = document.getElementById("status");
+      let p = 0;
+      bar.style.width = "0%";
+      status.textContent = "Uploaden…";
+      const t = setInterval(() => {
+        p += Math.random() * 12 + 4;
+        if (p >= 100) { p = 100; clearInterval(t); status.textContent = "Upload voltooid · ga verder met details →"; }
+        bar.style.width = p + "%";
+      }, 220);
+    }
+
+    // Categorie selectie
+    document.querySelectorAll("[data-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-cat]").forEach(b => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+      });
+    });
+
+    // Thumbnail eigen upload
+    const thumbUpload = document.getElementById("thumb-upload");
+    thumbUpload.addEventListener("change", () => {
+      if (!thumbUpload.files[0]) return;
+      const url = URL.createObjectURL(thumbUpload.files[0]);
+      document.getElementById("thumb-preview").style.backgroundImage = `url('${url}')`;
+    });
+    document.getElementById("thumb-auto").addEventListener("click", () => {
+      const seed = "keano-auto-" + Date.now();
+      document.getElementById("thumb-preview").style.backgroundImage =
+        `url('https://picsum.photos/seed/${seed}/800/450')`;
+    });
+
+    // Save draft
+    document.getElementById("save-draft-btn").addEventListener("click", () => {
+      alert("Demo: opgeslagen als concept. In de live versie verschijnt het in /admin met status 'concept'.");
+    });
+
+    function buildSummary() {
+      const t = (id) => document.getElementById(id)?.value || "";
+      const cat = document.querySelector("[data-cat].is-active")?.getAttribute("data-cat") || "films";
+      document.getElementById("final-preview").style.backgroundImage =
+        document.getElementById("thumb-preview").style.backgroundImage;
+      document.getElementById("summary").innerHTML = `
+        <div style="color:var(--text); font-family:var(--font-display); font-size:1.4rem; margin-bottom:8px;">${KKUtil.escapeHTML(t("f-title") || "Naamloos item")}</div>
+        <div style="margin-bottom:12px;">${KKUtil.escapeHTML(t("f-desc") || "Geen beschrijving opgegeven.")}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <span class="badge badge--pub">${KKUtil.escapeHTML((CATEGORIES[cat]||{}).label || cat)}</span>
+          ${t("f-year") ? `<span class="badge badge--draft">${KKUtil.escapeHTML(t("f-year"))}</span>` : ""}
+          ${t("f-duration") ? `<span class="badge badge--draft">${KKUtil.escapeHTML(t("f-duration"))}</span>` : ""}
+          ${t("f-vimeo") ? `<span class="badge badge--pub">VIMEO ${KKUtil.escapeHTML(t("f-vimeo"))}</span>` : ""}
+        </div>
+      `;
+    }
+
+    showStep(1);
+  }
+</script>
+</body>
+</html>

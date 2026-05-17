@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Keano Kolkman — Home</title>
+<meta name="robots" content="noindex,nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+<div id="site-header"></div>
+<main id="main"></main>
+<div id="site-footer"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  if (!KKAuth.requireAuth()) { /* redirected */ } else {
+    KKHeader.mount("home");
+    KKFooter.mount();
+    renderHome();
+  }
+
+  function renderHome() {
+    const main = document.getElementById("main");
+    const featured = KK.featured();
+
+    const sections = [
+      { title: "Nieuw toegevoegd", items: KK.newest(8) },
+      { title: "Uitgelicht", items: KK.favorites(), variant: null },
+      { title: "Films",           items: KK.byCategory("films"),     moreHref: "films.html" },
+      { title: "Animaties",       items: KK.byCategory("animaties"), moreHref: "animaties.html" },
+      { title: "Foto's",          items: KK.byCategory("fotos"),     moreHref: "fotos.html", variant: "photos" },
+      { title: "Projecten",       items: KK.byCategory("projecten"), moreHref: "projecten.html" },
+    ];
+
+    main.innerHTML = `
+      <section class="hero" aria-label="Uitgelicht">
+        <div class="hero__media" style="background-image: url('${featured.backdrop}')"></div>
+        <div class="container hero__inner">
+          <div class="hero__meta">
+            <span class="pill">Uitgelicht</span>
+            <span>${KKUtil.escapeHTML((CATEGORIES[featured.category]||{}).label || "")} · ${KKUtil.escapeHTML(featured.type)}</span>
+            <span>${featured.year}</span>
+            <span>${KKUtil.escapeHTML(featured.duration)}</span>
+          </div>
+          <h1>${KKUtil.escapeHTML(featured.title)}</h1>
+          <p class="hero__desc">${KKUtil.escapeHTML(featured.description)}</p>
+          <div class="hero__actions">
+            <a href="media.html?id=${featured.id}" class="btn btn--primary btn--lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              Bekijk
+            </a>
+            <a href="media.html?id=${featured.id}#info" class="btn btn--ghost btn--lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              Meer info
+            </a>
+          </div>
+        </div>
+      </section>
+
+      ${sections.map(s => KKRow.html({
+        title: s.title,
+        items: s.items,
+        moreHref: s.moreHref,
+        variant: s.variant,
+      })).join("")}
+    `;
+
+    document.querySelectorAll(".carousel").forEach(KKRow.mount);
+  }
+</script>
+</body>
+</html>
